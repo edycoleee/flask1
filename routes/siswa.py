@@ -1,56 +1,64 @@
 #routes/siswa.py
 from flask import Blueprint, request, jsonify
-from flasgger.utils import swag_from
-import sqlite3
+from flasgger import swag_from
+from services import siswa_service
 
 siswa_bp = Blueprint('siswa', __name__)
 
 @siswa_bp.route('/siswa', methods=['POST'])
-@swag_from('../docs/siswa_create.yml')
+@swag_from('../docs/siswa/create.yml')
 def create_siswa():
-    data = request.get_json()
-    with sqlite3.connect('siswa.db') as conn:
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO tb_siswa (nama, alamat) VALUES (?, ?)", (data['nama'], data['alamat']))
-        conn.commit()
-    return jsonify({"message": "Siswa berhasil ditambahkan"}), 201
+    try:
+        data = request.get_json()
+        siswa_service.create_siswa(data['nama'], data['alamat'])
+        return jsonify({"message": "Siswa berhasil ditambahkan"}), 201
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": "Gagal menambahkan siswa"}), 500
 
 @siswa_bp.route('/siswa', methods=['GET'])
-@swag_from('../docs/siswa_read_all.yml')
-def get_all_siswa():
-    with sqlite3.connect('siswa.db') as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM tb_siswa")
-        rows = cursor.fetchall()
-    result = [{"id": row[0], "nama": row[1], "alamat": row[2]} for row in rows]
-    return jsonify(result)
+@swag_from('../docs/siswa/read_all.yml')
+def read_all_siswa():
+    try:
+        data = siswa_service.read_all_siswa()
+        return jsonify(data), 200
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": "Gagal mengambil data"}), 500
 
 @siswa_bp.route('/siswa/<int:id>', methods=['GET'])
-@swag_from('../docs/siswa_read_id.yml')
-def get_siswa_by_id(id):
-    with sqlite3.connect('siswa.db') as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM tb_siswa WHERE id=?", (id,))
-        row = cursor.fetchone()
-    if row:
-        return jsonify({"id": row[0], "nama": row[1], "alamat": row[2]})
-    return jsonify({"message": "Siswa tidak ditemukan"}), 404
+@swag_from('../docs/siswa/read_id.yml')
+def read_siswa_by_id(id):
+    try:
+        data = siswa_service.read_siswa_by_id(id)
+        if data:
+            return jsonify(data), 200
+        return jsonify({"error": "Siswa tidak ditemukan"}), 404
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": "Gagal mengambil data"}), 500
 
 @siswa_bp.route('/siswa/<int:id>', methods=['PUT'])
-@swag_from('../docs/siswa_update.yml')
+@swag_from('../docs/siswa/update.yml')
 def update_siswa(id):
-    data = request.get_json()
-    with sqlite3.connect('siswa.db') as conn:
-        cursor = conn.cursor()
-        cursor.execute("UPDATE tb_siswa SET nama=?, alamat=? WHERE id=?", (data['nama'], data['alamat'], id))
-        conn.commit()
-    return jsonify({"message": "Siswa berhasil diperbarui"})
+    try:
+        data = request.get_json()
+        updated = siswa_service.update_siswa(id, data['nama'], data['alamat'])
+        if updated:
+            return jsonify({"message": "Siswa berhasil diperbarui"}), 200
+        return jsonify({"error": "Siswa tidak ditemukan"}), 404
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": "Gagal memperbarui siswa"}), 500
 
 @siswa_bp.route('/siswa/<int:id>', methods=['DELETE'])
-@swag_from('../docs/siswa_delete.yml')
+@swag_from('../docs/siswa/delete.yml')
 def delete_siswa(id):
-    with sqlite3.connect('siswa.db') as conn:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM tb_siswa WHERE id=?", (id,))
-        conn.commit()
-    return jsonify({"message": "Siswa berhasil dihapus"})
+    try:
+        deleted = siswa_service.delete_siswa(id)
+        if deleted:
+            return jsonify({"message": "Siswa berhasil dihapus"}), 200
+        return jsonify({"error": "Siswa tidak ditemukan"}), 404
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": "Gagal menghapus siswa"}), 500

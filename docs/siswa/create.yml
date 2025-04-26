@@ -20,3 +20,12 @@ parameters:
 responses:
   201:
     description: Siswa berhasil ditambahkan
+responses:
+  201:
+    description: Siswa berhasil ditambahkan
+    content:
+      application/json:
+        example:
+          message: Siswa berhasil ditambahkan
+  500:
+    description: Gagal menambahkan siswa

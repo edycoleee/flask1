@@ -10,3 +10,5 @@ parameters:
 responses:
   200:
     description: Siswa berhasil dihapus
+  404:
+    description: Siswa tidak ditemukan

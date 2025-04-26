@@ -25,3 +25,5 @@ parameters:
 responses:
   200:
     description: Siswa berhasil diperbarui
+  404:
+    description: Siswa tidak ditemukan
