@@ -1,0 +1,12 @@
+---
+tags:
+  - Siswa
+parameters:
+  - name: id
+    in: path
+    type: integer
+    required: true
+    description: ID siswa yang akan dihapus
+responses:
+  200:
+    description: Siswa berhasil dihapus

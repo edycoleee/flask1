@@ -1,0 +1,22 @@
+---
+tags:
+  - Siswa
+parameters:
+  - in: body
+    name: body
+    required: true
+    schema:
+      type: object
+      required:
+        - nama
+        - alamat
+      properties:
+        nama:
+          type: string
+          example: Budi
+        alamat:
+          type: string
+          example: Jakarta
+responses:
+  201:
+    description: Siswa berhasil ditambahkan

@@ -1,0 +1,17 @@
+---
+tags:
+  - Siswa
+responses:
+  200:
+    description: Daftar semua siswa
+    schema:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+          nama:
+            type: string
+          alamat:
+            type: string

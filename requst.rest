@@ -1,0 +1,14 @@
+#/request.rest
+### GET halo
+GET http://127.0.0.1:5000/halo HTTP/1.1
+
+### GET /nama/<nama>
+
+GET http://127.0.0.1:5000/nama/silmi HTTP/1.1
+
+### POST /halo
+
+POST http://127.0.0.1:5000/halo HTTP/1.1
+content-type: application/json
+
+{"nama": "Silmi", "alamat": "Semarang"}

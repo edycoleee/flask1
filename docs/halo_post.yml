@@ -1,0 +1,28 @@
+tags:
+  - Belajar API GET POST
+parameters:
+  - in: body
+    name: body
+    required: true
+    schema:
+      type: object
+      required:
+        - nama
+        - alamat
+      properties:
+        nama:
+          type: string
+          example: Silmi
+        alamat:
+          type: string
+          example: Semarang
+responses:
+  200:
+    description: Data berhasil diterima
+    schema:
+      type: object
+      properties:
+        nama:
+          type: string
+        alamat:
+          type: string

@@ -1,0 +1,18 @@
+---
+tags:
+  - Belajar API GET POST
+parameters:
+  - name: nama
+    in: path
+    type: string
+    required: true
+    description: Nama pengguna yang ingin disapa
+responses:
+  200:
+    description: Respons sukses
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Halo silmi

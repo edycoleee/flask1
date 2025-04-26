@@ -1,0 +1,12 @@
+---
+tags:
+  - Belajar API GET POST
+responses:
+  200:
+    description: Respon sukses
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Belajar Flask !
