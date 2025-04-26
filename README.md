@@ -1107,11 +1107,11 @@ def test_login(client):
     global TOKEN
     TOKEN = json_data["token"]
 
-# def test_read_all_siswa_with_token(client):
-#     headers = {"Authorization": TOKEN}
-#     response = client.get('/siswa', headers=headers)
-#     assert response.status_code == 200
-#     assert isinstance(response.get_json(), list)
+def test_read_all_siswa_with_token(client):
+    headers = {"Authorization": TOKEN}
+    response = client.get('/siswa', headers=headers)
+    assert response.status_code == 200
+    assert isinstance(response.get_json(), list)
 
 def test_logout(client):
     headers = {"Authorization": TOKEN}
