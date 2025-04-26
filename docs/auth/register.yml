@@ -1,0 +1,23 @@
+tags:
+  - Auth
+parameters:
+  - in: body
+    name: body
+    required: true
+    schema:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: silmi
+        password:
+          type: string
+          example: silmi123
+responses:
+  201:
+    description: Registrasi berhasil
+  409:
+    description: Username sudah digunakan

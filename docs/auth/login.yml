@@ -1,0 +1,30 @@
+tags:
+  - Auth
+parameters:
+  - in: body
+    name: body
+    required: true
+    schema:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: silmi
+        password:
+          type: string
+          example: silmi123
+responses:
+  200:
+    description: Login berhasil, token dikembalikan
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+        token:
+          type: string
+  401:
+    description: Username atau password salah

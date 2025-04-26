@@ -956,3 +956,279 @@ git branch -M main
 git remote add origin https://github.com/edycoleee/flask1.git
 git push -u origin main
 ```
+
+### 4. AUTH
+
+```cmd
+
+No | Method | URL | Request JSON | Response JSON (Berhasil) | Response JSON (Gagal)
+1 | POST | /register | { "username": "user1", "password": "pass123" } | { "message": "Registrasi berhasil" } | { "error": "Username sudah digunakan" } (409)
+2 | POST | /login | { "username": "user1", "password": "pass123" } | { "message": "Login berhasil", "token": "..." } | { "error": "Username atau password salah" } (401)
+3 | POST | /logout | (Header: Authorization: <token>) | { "message": "Logout berhasil" } | { "error": "Token tidak valid" } (401)
+
+project-folder/
+│
+├── app.py
+├── middleware/
+│ └── auth_middleware.py ← 🆕 Di sini tempatnya token_required
+├── routes/
+│ ├── siswa.py
+│ └── auth.py
+├── services/
+│ └── siswa_service.py
+...
+```
+
+```py
+#1. Tabel tb_user
+#Tambahkan ini di init_db() di app.py:
+
+conn.execute('''
+    CREATE TABLE IF NOT EXISTS tb_user (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        token TEXT
+    )
+''')
+
+
+#2. Folder routes/auth.py
+from flask import Blueprint, request, jsonify
+import sqlite3, uuid, hashlib
+
+auth_bp = Blueprint('auth', __name__)
+DB = 'siswa.db'
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+@auth_bp.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    username = data.get('username')
+    password = hash_password(data.get('password'))
+
+    try:
+        with sqlite3.connect(DB) as conn:
+            conn.execute("INSERT INTO tb_user (username, password) VALUES (?, ?)", (username, password))
+        return jsonify({"message": "Registrasi berhasil"}), 201
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "Username sudah digunakan"}), 409
+
+@auth_bp.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = hash_password(data.get('password'))
+
+    with sqlite3.connect(DB) as conn:
+        user = conn.execute("SELECT * FROM tb_user WHERE username = ? AND password = ?", (username, password)).fetchone()
+        if user:
+            token = str(uuid.uuid4())
+            conn.execute("UPDATE tb_user SET token = ? WHERE username = ?", (token, username))
+            return jsonify({"message": "Login berhasil", "token": token}), 200
+        return jsonify({"error": "Username atau password salah"}), 401
+
+@auth_bp.route('/logout', methods=['POST'])
+def logout():
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({"error": "Token tidak ditemukan"}), 401
+
+    with sqlite3.connect(DB) as conn:
+        cur = conn.execute("UPDATE tb_user SET token = NULL WHERE token = ?", (token,))
+        if cur.rowcount:
+            return jsonify({"message": "Logout berhasil"}), 200
+        return jsonify({"error": "Token tidak valid"}), 401
+
+
+#3. Register Blueprint di app.py
+from routes.auth import auth_bp
+app.register_blueprint(auth_bp)
+
+#4. Tambahkan Middleware Auth (Opsional) middleware/auth_middleware.py
+#Untuk mengamankan endpoint siswa, bisa buat decorator @token_required:
+from functools import wraps
+from flask import request, jsonify
+import sqlite3
+
+DB = 'siswa.db'
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token:
+            return jsonify({'error': 'Token diperlukan'}), 401
+        with sqlite3.connect(DB) as conn:
+            user = conn.execute("SELECT * FROM tb_user WHERE token = ?", (token,)).fetchone()
+            if not user:
+                return jsonify({'error': 'Token tidak valid'}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+#5.route siswa seperti ini
+@siswa_bp.route('/siswa', methods=['GET'])
+@token_required
+def read_all_siswa():
+    ...
+
+#6. File: test/test_auth.py
+import pytest
+from app import app
+
+@pytest.fixture
+def client():
+    app.config['TESTING'] = True
+    with app.test_client() as client:
+        yield client
+
+username = "testuser"
+password = "testpass"
+
+def test_register(client):
+    response = client.post('/register', json={
+        "username": username,
+        "password": password
+    })
+    assert response.status_code in [201, 409]  # 201 (baru), 409 (sudah ada)
+
+def test_login(client):
+    response = client.post('/login', json={
+        "username": username,
+        "password": password
+    })
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert "token" in json_data
+    # Simpan token untuk test berikutnya
+    global TOKEN
+    TOKEN = json_data["token"]
+
+# def test_read_all_siswa_with_token(client):
+#     headers = {"Authorization": TOKEN}
+#     response = client.get('/siswa', headers=headers)
+#     assert response.status_code == 200
+#     assert isinstance(response.get_json(), list)
+
+def test_logout(client):
+    headers = {"Authorization": TOKEN}
+    response = client.post('/logout', headers=headers)
+    assert response.status_code == 200
+    assert response.get_json().get("message") == "Logout berhasil"
+
+#python test/test_auth.py
+
+```
+
+- DOKUMENTASi
+
+```
+project-folder/
+└── docs/
+    └── auth/
+        ├── register.yml
+        ├── login.yml
+        └── logout.yml
+
+```
+
+```yml
+#register.yml
+tags:
+  - Auth
+parameters:
+  - in: body
+    name: body
+    required: true
+    schema:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: silmi
+        password:
+          type: string
+          example: silmi123
+responses:
+  201:
+    description: Registrasi berhasil
+  409:
+    description: Username sudah digunakan
+
+#login.yml
+tags:
+  - Auth
+parameters:
+  - in: body
+    name: body
+    required: true
+    schema:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: silmi
+        password:
+          type: string
+          example: silmi123
+responses:
+  200:
+    description: Login berhasil, token dikembalikan
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+        token:
+          type: string
+  401:
+    description: Username atau password salah
+
+#logout.yml
+tags:
+  - Auth
+summary: Logout user berdasarkan token
+produces:
+  - application/json
+parameters:
+  - name: Authorization
+    in: header
+    required: true
+    type: string
+    description: Token user
+responses:
+  200:
+    description: Logout berhasil
+  401:
+    description: Token tidak valid atau tidak ditemukan
+
+```
+
+- routes/auth.py
+
+```py
+@auth_bp.route('/register', methods=['POST'])
+@swag_from('../docs/auth/register.yml')
+def register():
+    ...
+
+@auth_bp.route('/login', methods=['POST'])
+@swag_from('../docs/auth/login.yml')
+def login():
+    ...
+
+@auth_bp.route('/logout', methods=['POST'])
+@swag_from('../docs/auth/logout.yml')
+def logout():
+    ...
+
+```

@@ -1,6 +1,7 @@
 #routes/siswa.py
 from flask import Blueprint, request, jsonify
 from flasgger import swag_from
+from middleware.auth_middleware import token_required
 from services import siswa_service
 
 siswa_bp = Blueprint('siswa', __name__)
@@ -17,6 +18,7 @@ def create_siswa():
         return jsonify({"error": "Gagal menambahkan siswa"}), 500
 
 @siswa_bp.route('/siswa', methods=['GET'])
+@token_required
 @swag_from('../docs/siswa/read_all.yml')
 def read_all_siswa():
     try:

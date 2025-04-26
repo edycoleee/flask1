@@ -1,6 +1,15 @@
 ---
 tags:
   - Siswa
+summary: Ambil semua data siswa
+security:
+  - ApiKeyAuth: []
+parameters:
+  - name: Authorization
+    in: header
+    required: true
+    type: string
+    description: Token autentikasi dari login
 responses:
   200:
     description: Daftar semua siswa
@@ -15,3 +24,10 @@ responses:
             type: string
           alamat:
             type: string
+  401:
+    description: Token tidak valid atau tidak disertakan
+    schema:
+      type: object
+      properties:
+        error:
+          type: string

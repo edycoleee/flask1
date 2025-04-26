@@ -53,9 +53,20 @@ import sqlite3
 
 app = Flask(__name__)
 CORS(app)  # ✅ Aktifkan CORS untuk semua route
+# app.config['SWAGGER'] = {
+#     'title': 'COBA API',
+#     'uiversion': 3
+# }
 app.config['SWAGGER'] = {
     'title': 'COBA API',
-    'uiversion': 3
+    'uiversion': 3,
+    'securityDefinitions': {
+        'ApiKeyAuth': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization'
+        }
+    }
 }
 swagger = Swagger(app)
 
@@ -69,13 +80,23 @@ def init_db():
                 alamat TEXT NOT NULL
             )
         ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS tb_user (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                token TEXT
+            )
+        ''')
 
 init_db()
 
 # Register Blueprint
 from routes.belajar import belajar_bp
 from routes.siswa import siswa_bp
+from routes.auth import auth_bp
 
+app.register_blueprint(auth_bp)
 app.register_blueprint(belajar_bp)
 app.register_blueprint(siswa_bp)
 

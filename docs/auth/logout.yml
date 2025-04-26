@@ -1,0 +1,16 @@
+tags:
+  - Auth
+summary: Logout user berdasarkan token
+produces:
+  - application/json
+parameters:
+  - name: Authorization
+    in: header
+    required: true
+    type: string
+    description: Token user
+responses:
+  200:
+    description: Logout berhasil
+  401:
+    description: Token tidak valid atau tidak ditemukan
