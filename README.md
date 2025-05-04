@@ -1,5 +1,11 @@
 ### 1. API SEDERHANA
 
+| No  | Method | Endpoint       | Request Body (JSON)                         | Response (JSON)                             |
+| --- | ------ | -------------- | ------------------------------------------- | ------------------------------------------- |
+| 1   | GET    | `/halo`        | (tidak ada)                                 | `{ "message": "Belajar Flask" }`            |
+| 2   | GET    | `/nama/<nama>` | (tidak ada)                                 | `{ "message": "Halo silmi" }`               |
+| 3   | POST   | `/halo`        | `{ "nama": "Silmi", "alamat": "Semarang" }` | `{ "nama": "Silmi", "alamat": "Semarang" }` |
+
 1. Request : GET /halo
    Response
 
@@ -471,13 +477,6 @@ content-type: application/json
 | 5   | DELETE | `/siswa/<id>` | (tidak ada)                                        | `{ "message": "Siswa berhasil dihapus" }`                     |
 
 ```cmd
-No	|Method	Endpoint	|Request Body (JSON)	|Response (JSON)
-1	POST	|/siswa	|{ "nama": "Silmi", "alamat": "Semarang" }	|{ "message": "Siswa berhasil ditambahkan" }
-2	GET	|/siswa	(tidak ada)	|[ { "id": 1, "nama": "Silmi", "alamat": "Semarang" }, ... ]
-3	GET	|/siswa/<id>	|(tidak ada)	|{ "id": 1, "nama": "Silmi", "alamat": "Semarang" }
-4	PUT	|/siswa/<id>	|{ "nama": "Silmi Updated", "alamat": "Jakarta" }	{ "message": "Siswa berhasil diperbarui" }
-5	DELETE	|/siswa/<id>	(tidak ada)	|{ "message": "Siswa berhasil dihapus" }
-
 project-folder/
 ├── app.py
 ├── routes/
@@ -980,12 +979,13 @@ git push -u origin main
 
 ### 4. AUTH
 
-```cmd
+| No  | Method | URL       | Request JSON                                     | Response JSON (Berhasil)                          | Response JSON (Gagal)                                             |
+| --- | ------ | --------- | ------------------------------------------------ | ------------------------------------------------- | ----------------------------------------------------------------- |
+| 1   | POST   | /register | `{ "username": "user1", "password": "pass123" }` | `{ "message": "Registrasi berhasil" }`            | `409 Conflict`: `{ "error": "Username sudah digunakan" }`         |
+| 2   | POST   | /login    | `{ "username": "user1", "password": "pass123" }` | `{ "message": "Login berhasil", "token": "..." }` | `401 Unauthorized`: `{ "error": "Username atau password salah" }` |
+| 3   | POST   | /logout   | (Header: `Authorization: Bearer <token>`)        | `{ "message": "Logout berhasil" }`                | `401 Unauthorized`: `{ "error": "Token tidak valid" }`            |
 
-No | Method | URL | Request JSON | Response JSON (Berhasil) | Response JSON (Gagal)
-1 | POST | /register | { "username": "user1", "password": "pass123" } | { "message": "Registrasi berhasil" } | { "error": "Username sudah digunakan" } (409)
-2 | POST | /login | { "username": "user1", "password": "pass123" } | { "message": "Login berhasil", "token": "..." } | { "error": "Username atau password salah" } (401)
-3 | POST | /logout | (Header: Authorization: <token>) | { "message": "Logout berhasil" } | { "error": "Token tidak valid" } (401)
+```cmd
 
 project-folder/
 │
@@ -1687,13 +1687,15 @@ init_db()
 
 ```
 
+| No  | Method | Endpoint        | Request Body (JSON)                                                               | Response (JSON)                                                                              |
+| --- | ------ | --------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 1   | POST   | `/product`      | `{ "kd_product": "KMPT01", "nm_product": "Komputer Satu", "price": 1000 }`        | `{ "message": "Product berhasil ditambahkan" }`                                              |
+| 2   | GET    | `/product`      | (tidak ada)                                                                       | `[ { "id": 1, "kd_product": "KMPT01", "nm_product": "Komputer Satu", "price": 1000 }, ... ]` |
+| 3   | GET    | `/product/<id>` | (tidak ada)                                                                       | `{ "id": 1, "kd_product": "KMPT01", "nm_product": "Komputer Satu", "price": 1000 }`          |
+| 4   | PUT    | `/product/<id>` | `{ "kd_product": "KMPT01 Updated", "nm_product": "Komputer Dua", "price": 2000 }` | `{ "message": "Product berhasil diperbarui" }`                                               |
+| 5   | DELETE | `/product/<id>` | (tidak ada)                                                                       | `{ "message": "Product berhasil dihapus" }`                                                  |
+
 ```py
-No	|Method	Endpoint	|Request Body (JSON)	|Response (JSON)
-1	POST	|/product	|{ "kd_product": "KMPT01", "nm_product": "Komputer Satu", "price": 1000 }	|{ "message": "Product berhasil ditambahkan" }
-2	GET	|/product	(tidak ada)	|[ { "id": 1, "kd_product": "KMPT01", "nm_product": "Komputer Satu", "price": 1000  }, ... ]
-3	GET	|/product/<id>	|(tidak ada)	|{ "id": 1, "kd_product": "KMPT01", "nm_product": "Komputer Satu" , "price": 1000 }
-4	PUT	|/product/<id>	|{ "kd_product": "KMPT01 Updated", "nm_product": "Komputer Dua", "price": 2000  }	{ "message": "Product berhasil diperbarui" }
-5	DELETE	|/product/<id>	(tidak ada)	|{ "message": "Product berhasil dihapus" }
 
 project-folder/
 ├── app.py
@@ -1741,12 +1743,13 @@ init_db()
 
 ```
 
-No |Method Endpoint |Request Body (JSON) |Response (JSON)
-1 POST |/book |{ "kd_book": "BOOK01", "nm_book": "Buku Satu", "price": 1000 } |{ "message": "Product berhasil ditambahkan" }
-2 GET |/book (tidak ada) |[ { "id": 1, "kd_book": "BOOK01", "nm_book": "Buku Satu", "price": 1000 }, ... ]
-3 GET |/book/<id> |(tidak ada) |{ "id": 1, "kd_book": "BOOK01", "nm_book": "Buku Satu" , "price": 1000 }
-4 PUT |/book/<id> |{ "kd_book": "BOOK01 Updated", "nm_book": "Buku Dua", "price": 2000 } { "message": "Product berhasil diperbarui" }
-5 DELETE |/book/<id> (tidak ada) |{ "message": "Product berhasil dihapus" }
+| No  | Method | Endpoint     | Request Body (JSON)                                                     | Response (JSON)                                                                    |
+| --- | ------ | ------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 1   | POST   | `/book`      | `{ "kd_book": "BOOK01", "nm_book": "Buku Satu", "price": 1000 }`        | `{ "message": "Buku berhasil ditambahkan" }`                                       |
+| 2   | GET    | `/book`      | (tidak ada)                                                             | `[ { "id": 1, "kd_book": "BOOK01", "nm_book": "Buku Satu", "price": 1000 }, ... ]` |
+| 3   | GET    | `/book/<id>` | (tidak ada)                                                             | `{ "id": 1, "kd_book": "BOOK01", "nm_book": "Buku Satu", "price": 1000 }`          |
+| 4   | PUT    | `/book/<id>` | `{ "kd_book": "BOOK01 Updated", "nm_book": "Buku Dua", "price": 2000 }` | `{ "message": "Buku berhasil diperbarui" }`                                        |
+| 5   | DELETE | `/book/<id>` | (tidak ada)                                                             | `{ "message": "Buku berhasil dihapus" }`                                           |
 
 ```py
 
