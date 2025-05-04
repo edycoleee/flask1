@@ -462,6 +462,14 @@ content-type: application/json
 
 ### 2. API CRUD SISWA SQLITE
 
+| No  | Method | Endpoint      | Request Body (JSON)                                | Response (JSON)                                               |
+| --- | ------ | ------------- | -------------------------------------------------- | ------------------------------------------------------------- |
+| 1   | POST   | `/siswa`      | `{ "nama": "Silmi", "alamat": "Semarang" }`        | `{ "message": "Siswa berhasil ditambahkan" }`                 |
+| 2   | GET    | `/siswa`      | (tidak ada)                                        | `[ { "id": 1, "nama": "Silmi", "alamat": "Semarang" }, ... ]` |
+| 3   | GET    | `/siswa/<id>` | (tidak ada)                                        | `{ "id": 1, "nama": "Silmi", "alamat": "Semarang" }`          |
+| 4   | PUT    | `/siswa/<id>` | `{ "nama": "Silmi Updated", "alamat": "Jakarta" }` | `{ "message": "Siswa berhasil diperbarui" }`                  |
+| 5   | DELETE | `/siswa/<id>` | (tidak ada)                                        | `{ "message": "Siswa berhasil dihapus" }`                     |
+
 ```cmd
 No	|Method	Endpoint	|Request Body (JSON)	|Response (JSON)
 1	POST	|/siswa	|{ "nama": "Silmi", "alamat": "Semarang" }	|{ "message": "Siswa berhasil ditambahkan" }
