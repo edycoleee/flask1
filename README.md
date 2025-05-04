@@ -1733,13 +1733,14 @@ init_db()
 
 ```
 
+No |Method Endpoint |Request Body (JSON) |Response (JSON)
+1 POST |/book |{ "kd_book": "BOOK01", "nm_book": "Buku Satu", "price": 1000 } |{ "message": "Product berhasil ditambahkan" }
+2 GET |/book (tidak ada) |[ { "id": 1, "kd_book": "BOOK01", "nm_book": "Buku Satu", "price": 1000 }, ... ]
+3 GET |/book/<id> |(tidak ada) |{ "id": 1, "kd_book": "BOOK01", "nm_book": "Buku Satu" , "price": 1000 }
+4 PUT |/book/<id> |{ "kd_book": "BOOK01 Updated", "nm_book": "Buku Dua", "price": 2000 } { "message": "Product berhasil diperbarui" }
+5 DELETE |/book/<id> (tidak ada) |{ "message": "Product berhasil dihapus" }
+
 ```py
-No	|Method	Endpoint	|Request Body (JSON)	|Response (JSON)
-1	POST	|/book	|{ "kd_book": "BOOK01", "nm_book": "Buku Satu", "price": 1000 }	|{ "message": "Product berhasil ditambahkan" }
-2	GET	|/book	(tidak ada)	|[ { "id": 1, "kd_book": "BOOK01", "nm_book": "Buku Satu", "price": 1000  }, ... ]
-3	GET	|/book/<id>	|(tidak ada)	|{ "id": 1, "kd_book": "BOOK01", "nm_book": "Buku Satu" , "price": 1000 }
-4	PUT	|/book/<id>	|{ "kd_book": "BOOK01 Updated", "nm_book": "Buku Dua", "price": 2000  }	{ "message": "Product berhasil diperbarui" }
-5	DELETE	|/book/<id>	(tidak ada)	|{ "message": "Product berhasil dihapus" }
 
 project-folder/
 ├── app.py
