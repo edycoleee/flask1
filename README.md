@@ -225,7 +225,7 @@ def test_hallo_endpoint(client):
 ```yml
 ---
 tags:
-  - Halo
+  - Belajar API GET POST
 responses:
   200:
     description: Respon sukses
@@ -234,7 +234,7 @@ responses:
       properties:
         message:
           type: string
-          example: Halo Flask
+          example: Belajar Flask
 ```
 
 - File **init**.py berisi file kosong
@@ -675,6 +675,15 @@ parameters:
 responses:
   201:
     description: Siswa berhasil ditambahkan
+responses:
+  201:
+    description: Siswa berhasil ditambahkan
+    content:
+      application/json:
+        example:
+          message: Siswa berhasil ditambahkan
+  500:
+    description: Gagal menambahkan siswa
 
 #/docs/siswa_read_all
 ---
@@ -748,6 +757,8 @@ parameters:
 responses:
   200:
     description: Siswa berhasil diperbarui
+  404:
+    description: Siswa tidak ditemukan
 
 #docs/siswa_delete.yml
 ---
@@ -762,6 +773,8 @@ parameters:
 responses:
   200:
     description: Siswa berhasil dihapus
+  404:
+    description: Siswa tidak ditemukan
 ```
 
 ### 3. CLEAN CODE SISWA API
@@ -1136,7 +1149,7 @@ project-folder/
 ```
 
 ```yml
-#register.yml
+#auth/register.yml
 tags:
   - Auth
 parameters:
@@ -1161,7 +1174,7 @@ responses:
   409:
     description: Username sudah digunakan
 
-#login.yml
+#auth/login.yml
 tags:
   - Auth
 parameters:
@@ -1193,7 +1206,7 @@ responses:
   401:
     description: Username atau password salah
 
-#logout.yml
+#auth/logout.yml
 tags:
   - Auth
 summary: Logout user berdasarkan token
@@ -1216,19 +1229,429 @@ responses:
 - routes/auth.py
 
 ```py
+#/routes/auth.py
+from flask import Blueprint, request, jsonify
+import sqlite3, uuid, hashlib
+from flasgger.utils import swag_from
+
+auth_bp = Blueprint('auth', __name__)
+DB = 'siswa.db'
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
 @auth_bp.route('/register', methods=['POST'])
 @swag_from('../docs/auth/register.yml')
 def register():
-    ...
+    data = request.get_json()
+    username = data.get('username')
+    password = hash_password(data.get('password'))
+
+    try:
+        with sqlite3.connect(DB) as conn:
+            conn.execute("INSERT INTO tb_user (username, password) VALUES (?, ?)", (username, password))
+        return jsonify({"message": "Registrasi berhasil"}), 201
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "Username sudah digunakan"}), 409
 
 @auth_bp.route('/login', methods=['POST'])
 @swag_from('../docs/auth/login.yml')
 def login():
-    ...
+    data = request.get_json()
+    username = data.get('username')
+    password = hash_password(data.get('password'))
+
+    with sqlite3.connect(DB) as conn:
+        user = conn.execute("SELECT * FROM tb_user WHERE username = ? AND password = ?", (username, password)).fetchone()
+        if user:
+            token = str(uuid.uuid4())
+            conn.execute("UPDATE tb_user SET token = ? WHERE username = ?", (token, username))
+            return jsonify({"message": "Login berhasil", "token": token}), 200
+        return jsonify({"error": "Username atau password salah"}), 401
 
 @auth_bp.route('/logout', methods=['POST'])
 @swag_from('../docs/auth/logout.yml')
 def logout():
-    ...
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({"error": "Token tidak ditemukan"}), 401
 
+    with sqlite3.connect(DB) as conn:
+        cur = conn.execute("UPDATE tb_user SET token = NULL WHERE token = ?", (token,))
+        if cur.rowcount:
+            return jsonify({"message": "Logout berhasil"}), 200
+        return jsonify({"error": "Token tidak valid"}), 401
 ```
+
+### 5. IMPLEMENTASI AUTH PADA API SISWA
+
+- app.py
+
+```py
+from flask import Flask
+from flasgger import Swagger
+from flask_cors import CORS  # ✅ Tambahkan ini
+import sqlite3
+
+app = Flask(__name__)
+CORS(app)  # ✅ Aktifkan CORS untuk semua route
+
+app.config['SWAGGER'] = {
+    'title': 'COBA API',
+    'uiversion': 3,
+    'securityDefinitions': {
+        'ApiKeyAuth': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization'
+        }
+    }
+}
+swagger = Swagger(app)
+
+# Inisialisasi DB
+def init_db():
+    with sqlite3.connect('siswa.db') as conn:
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS tb_siswa (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nama TEXT NOT NULL,
+                alamat TEXT NOT NULL
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS tb_user (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                token TEXT
+            )
+        ''')
+
+init_db()
+
+# Register Blueprint
+from routes.belajar import belajar_bp
+from routes.siswa import siswa_bp
+from routes.auth import auth_bp
+
+app.register_blueprint(auth_bp)
+app.register_blueprint(belajar_bp)
+app.register_blueprint(siswa_bp)
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+- routes/siswa.py
+
+```py
+#routes/siswa.py
+from flask import Blueprint, request, jsonify
+from flasgger import swag_from
+from middleware.auth_middleware import token_required
+from services import siswa_service
+
+siswa_bp = Blueprint('siswa', __name__)
+
+@siswa_bp.route('/siswa', methods=['POST'])
+@token_required
+@swag_from('../docs/siswa/create.yml')
+def create_siswa():
+    try:
+        data = request.get_json()
+        siswa_service.create_siswa(data['nama'], data['alamat'])
+        return jsonify({"message": "Siswa berhasil ditambahkan"}), 201
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": "Gagal menambahkan siswa"}), 500
+
+@siswa_bp.route('/siswa', methods=['GET'])
+@token_required
+@swag_from('../docs/siswa/read_all.yml')
+def read_all_siswa():
+    try:
+        data = siswa_service.read_all_siswa()
+        return jsonify(data), 200
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": "Gagal mengambil data"}), 500
+
+@siswa_bp.route('/siswa/<int:id>', methods=['GET'])
+@token_required
+@swag_from('../docs/siswa/read_id.yml')
+def read_siswa_by_id(id):
+    try:
+        data = siswa_service.read_siswa_by_id(id)
+        if data:
+            return jsonify(data), 200
+        return jsonify({"error": "Siswa tidak ditemukan"}), 404
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": "Gagal mengambil data"}), 500
+
+@siswa_bp.route('/siswa/<int:id>', methods=['PUT'])
+@token_required
+@swag_from('../docs/siswa/update.yml')
+def update_siswa(id):
+    try:
+        data = request.get_json()
+        updated = siswa_service.update_siswa(id, data['nama'], data['alamat'])
+        if updated:
+            return jsonify({"message": "Siswa berhasil diperbarui"}), 200
+        return jsonify({"error": "Siswa tidak ditemukan"}), 404
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": "Gagal memperbarui siswa"}), 500
+
+@siswa_bp.route('/siswa/<int:id>', methods=['DELETE'])
+@token_required
+@swag_from('../docs/siswa/delete.yml')
+def delete_siswa(id):
+    try:
+        deleted = siswa_service.delete_siswa(id)
+        if deleted:
+            return jsonify({"message": "Siswa berhasil dihapus"}), 200
+        return jsonify({"error": "Siswa tidak ditemukan"}), 404
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": "Gagal menghapus siswa"}), 500
+```
+
+- docs/siswa.py
+
+```yml
+#docs/siswa/delete.yml
+---
+tags:
+  - Siswa
+summary: Hapus siswa berdasarkan ID
+security:
+  - ApiKeyAuth: []
+parameters:
+  - name: Authorization
+    in: header
+    required: true
+    type: string
+    description: Token autentikasi
+  - name: id
+    in: path
+    required: true
+    type: integer
+    description: ID siswa
+responses:
+  200:
+    description: Siswa berhasil dihapus
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+  404:
+    description: Siswa tidak ditemukan
+  500:
+    description: Gagal menghapus siswa
+
+#docs/siswa/update.yml
+---
+tags:
+  - Siswa
+summary: Perbarui data siswa berdasarkan ID
+security:
+  - ApiKeyAuth: []
+parameters:
+  - name: Authorization
+    in: header
+    required: true
+    type: string
+    description: Token autentikasi
+  - name: id
+    in: path
+    required: true
+    type: integer
+    description: ID siswa
+  - in: body
+    name: body
+    required: true
+    schema:
+      type: object
+      required:
+        - nama
+        - alamat
+      properties:
+        nama:
+          type: string
+        alamat:
+          type: string
+responses:
+  200:
+    description: Siswa berhasil diperbarui
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+  404:
+    description: Siswa tidak ditemukan
+  500:
+    description: Gagal memperbarui siswa
+
+#docs/siswa/read_id.yml
+---
+tags:
+  - Siswa
+summary: Ambil data siswa berdasarkan ID
+security:
+  - ApiKeyAuth: []
+parameters:
+  - name: Authorization
+    in: header
+    required: true
+    type: string
+    description: Token autentikasi
+  - name: id
+    in: path
+    required: true
+    type: integer
+    description: ID siswa
+responses:
+  200:
+    description: Data siswa ditemukan
+    schema:
+      type: object
+      properties:
+        id:
+          type: integer
+        nama:
+          type: string
+        alamat:
+          type: string
+  404:
+    description: Siswa tidak ditemukan
+  500:
+    description: Gagal mengambil data
+
+#docs/siswa/create.yml
+---
+tags:
+  - Siswa
+summary: Tambah siswa baru
+security:
+  - ApiKeyAuth: []
+parameters:
+  - name: Authorization
+    in: header
+    required: true
+    type: string
+    description: Token autentikasi
+  - in: body
+    name: body
+    required: true
+    schema:
+      type: object
+      required:
+        - nama
+        - alamat
+      properties:
+        nama:
+          type: string
+        alamat:
+          type: string
+responses:
+  201:
+    description: Siswa berhasil ditambahkan
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+  500:
+    description: Gagal menambahkan siswa
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+```
+
+- test/test_siswa.py
+
+```py
+import pytest
+from app import app
+
+@pytest.fixture
+def client():
+    app.config['TESTING'] = True
+    with app.test_client() as client:
+        yield client
+
+@pytest.fixture
+def auth_headers(client):
+    # Register
+    client.post('/register', json={"username": "testuser", "password": "testpass"})
+
+    # Login
+    response = client.post('/login', json={"username": "testuser", "password": "testpass"})
+    token = response.get_json().get('token')
+
+    return {
+        "Authorization": token
+    }
+
+def test_create_siswa(client, auth_headers):
+    response = client.post('/siswa', headers=auth_headers, json={
+        "nama": "Test", "alamat": "Bandung"
+    })
+    assert response.status_code == 201
+    assert b"Siswa berhasil ditambahkan" in response.data
+
+def test_get_all_siswa(client, auth_headers):
+    response = client.get('/siswa', headers=auth_headers)
+    assert response.status_code == 200
+    assert isinstance(response.get_json(), list)
+
+def test_get_siswa_by_id(client, auth_headers):
+    # Buat siswa
+    create = client.post('/siswa', headers=auth_headers, json={"nama": "Andi", "alamat": "Jogja"})
+    assert create.status_code == 201
+
+    # Ambil siswa terakhir
+    siswa = client.get('/siswa', headers=auth_headers).get_json()[-1]
+    id_siswa = siswa['id']
+
+    # Test ambil berdasarkan ID
+    response = client.get(f'/siswa/{id_siswa}', headers=auth_headers)
+    assert response.status_code == 200
+    assert response.get_json()['nama'] == "Andi"
+
+def test_update_siswa(client, auth_headers):
+    # Buat siswa
+    client.post('/siswa', headers=auth_headers, json={"nama": "Budi", "alamat": "Solo"})
+    siswa = client.get('/siswa', headers=auth_headers).get_json()[-1]
+    id_siswa = siswa['id']
+
+    # Update
+    response = client.put(f'/siswa/{id_siswa}', headers=auth_headers, json={
+        "nama": "Budi Update", "alamat": "Solo Baru"
+    })
+    assert response.status_code == 200
+    assert b"Siswa berhasil diperbarui" in response.data
+
+def test_delete_siswa(client, auth_headers):
+    # Buat siswa
+    client.post('/siswa', headers=auth_headers, json={"nama": "Citra", "alamat": "Bogor"})
+    siswa = client.get('/siswa', headers=auth_headers).get_json()[-1]
+    id_siswa = siswa['id']
+
+    # Hapus siswa
+    response = client.delete(f'/siswa/{id_siswa}', headers=auth_headers)
+    assert response.status_code == 200
+    assert b"Siswa berhasil dihapus" in response.data
+
+    # Pastikan sudah dihapus
+    check = client.get(f'/siswa/{id_siswa}', headers=auth_headers)
+    assert check.status_code == 404
+```
+
+### 6. FRONT END REACTJS
