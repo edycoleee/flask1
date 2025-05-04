@@ -1654,4 +1654,112 @@ def test_delete_siswa(client, auth_headers):
     assert check.status_code == 404
 ```
 
-### 6. FRONT END REACTJS
+### 6. LATIHAN BUAT ULANG SEMUA >> API PRODUCT
+
+API SEDERHANA >> CRUD API PRODUCT >> AUTH
+
+- tb_product (id,kd_product,nm_product,price)
+
+```python
+#app.py
+
+# Inisialisasi DB
+def init_db():
+    with sqlite3.connect('product.db') as conn:
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS tb_product (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              kd_product TEXT NOT NULL,
+              nm_product TEXT NOT NULL,
+              price REAL NOT NULL
+            )
+        ''')
+
+init_db()
+
+```
+
+```py
+No	|Method	Endpoint	|Request Body (JSON)	|Response (JSON)
+1	POST	|/product	|{ "kd_product": "KMPT01", "nm_product": "Komputer Satu", "price": 1000 }	|{ "message": "Product berhasil ditambahkan" }
+2	GET	|/product	(tidak ada)	|[ { "id": 1, "kd_product": "KMPT01", "nm_product": "Komputer Satu", "price": 1000  }, ... ]
+3	GET	|/product/<id>	|(tidak ada)	|{ "id": 1, "kd_product": "KMPT01", "nm_product": "Komputer Satu" , "price": 1000 }
+4	PUT	|/product/<id>	|{ "kd_product": "KMPT01 Updated", "nm_product": "Komputer Dua", "price": 2000  }	{ "message": "Product berhasil diperbarui" }
+5	DELETE	|/product/<id>	(tidak ada)	|{ "message": "Product berhasil dihapus" }
+
+project-folder/
+├── app.py
+├── routes/
+│   ├── product.py         ← Semua endpoint product
+│   └── belajar.py       ← Endpoint halo dan nama
+├── docs/                ← Swagger YAML
+│   ├── product_create.yml
+│   ├── product_delete.yml
+│   ├── product_update.yml
+│   ├── product_read_all.yml
+│   ├── product_read_id.yml
+│   ├── nama.yml
+│   ├── halo_post.yml
+│   └── halo.yml
+├── test/
+│   ├── __init__.py
+│   ├── test_product.py
+│   └── test_belajar.py
+└── product.db             ← File SQLite (otomatis dibuat)
+```
+
+### 7. LATIHAN BUAT ULANG SEMUA >> API BOOK
+
+API SEDERHANA >> CRUD API PRODUCT >> AUTH
+
+- tb_book (id,kd_book,nm_book,price)
+
+```python
+#app.py
+
+# Inisialisasi DB
+def init_db():
+    with sqlite3.connect('book.db') as conn:
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS tb_book (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              kd_book TEXT NOT NULL,
+              nm_book TEXT NOT NULL,
+              price REAL NOT NULL
+            )
+        ''')
+
+init_db()
+
+```
+
+```py
+No	|Method	Endpoint	|Request Body (JSON)	|Response (JSON)
+1	POST	|/book	|{ "kd_book": "KMPT01", "nm_book": "Komputer Satu", "price": 1000 }	|{ "message": "Product berhasil ditambahkan" }
+2	GET	|/book	(tidak ada)	|[ { "id": 1, "kd_book": "KMPT01", "nm_book": "Komputer Satu", "price": 1000  }, ... ]
+3	GET	|/book/<id>	|(tidak ada)	|{ "id": 1, "kd_book": "KMPT01", "nm_book": "Komputer Satu" , "price": 1000 }
+4	PUT	|/book/<id>	|{ "kd_book": "KMPT01 Updated", "nm_book": "Komputer Dua", "price": 2000  }	{ "message": "Product berhasil diperbarui" }
+5	DELETE	|/book/<id>	(tidak ada)	|{ "message": "Product berhasil dihapus" }
+
+project-folder/
+├── app.py
+├── routes/
+│   ├── book.py         ← Semua endpoint book
+│   └── belajar.py       ← Endpoint halo dan nama
+├── docs/                ← Swagger YAML
+│   ├── book_create.yml
+│   ├── book_delete.yml
+│   ├── book_update.yml
+│   ├── book_read_all.yml
+│   ├── book_read_id.yml
+│   ├── nama.yml
+│   ├── halo_post.yml
+│   └── halo.yml
+├── test/
+│   ├── __init__.py
+│   ├── test_book.py
+│   └── test_belajar.py
+└── book.db             ← File SQLite (otomatis dibuat)
+```
+
+### 8. FRONT END REACTJS
